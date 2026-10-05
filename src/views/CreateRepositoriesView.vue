@@ -8,12 +8,12 @@ import {
   getStudentGroupMap,
   getStudents,
 } from "@/domain/pae"
-import {
-  addProjectMember,
-  createProject,
-  getGroup,
-} from "@/services/gitlab/api"
+import { getGroup } from "@/services/gitlab/api"
 import { getOrCreateSubgroup } from "@/services/gitlab/groups"
+import {
+  ensureProjectMember,
+  getOrCreateProject,
+} from "@/services/gitlab/projects"
 import { getPaeLastUpdate, loadPae } from "@/services/pae"
 import { findStudentGitLabUser } from "@/services/students"
 import { useAuthStore } from "@/stores/auth"
@@ -248,7 +248,11 @@ const canPrepare = computed(() => {
   if (!gitlabGroup.value) return false
   if (!students.value.length) return false
   if (!patternIsValid.value) return false
-  if (createStudentSubgroups.value && studentsWithoutGroup.value.length) {
+
+  if (
+    createStudentSubgroups.value &&
+    studentsWithoutGroup.value.length
+  ) {
     return false
   }
 
@@ -287,8 +291,6 @@ async function prepareCreation() {
           studentGroup: repository.studentGroup,
           user: result.user,
           usernameType: result.usernameType,
-          canCreateRepository: true,
-          canAddMember: result.user !== null,
         }
       },
       (completed) => {
@@ -322,10 +324,6 @@ const studentsWithFallbackUsername = computed(() =>
   ),
 )
 
-const repositoriesReadyToCreate = computed(() =>
-  preparationResults.value.filter((result) => result.canCreateRepository),
-)
-
 // =============================================================================
 // Repository creation
 // =============================================================================
@@ -354,7 +352,7 @@ const creationProgress = computed(() => {
 const canCreate = computed(() => {
   return (
     preparationDone.value &&
-    repositoriesReadyToCreate.value.length > 0 &&
+    preparationResults.value.length > 0 &&
     !creationLoading.value
   )
 })
@@ -365,12 +363,15 @@ async function createRepositories() {
   resetCreation()
 
   creationLoading.value = true
-  creationTotal.value = repositoriesReadyToCreate.value.length
+  creationTotal.value = preparationResults.value.length
 
   try {
     const subgroups = new Map()
 
-    // Create or retrieve required student subgroups
+    // -------------------------------------------------------------------------
+    // Create or retrieve required subgroups
+    // -------------------------------------------------------------------------
+
     if (createStudentSubgroups.value) {
       for (const groupName of requiredStudentGroups.value) {
         const subgroup = await getOrCreateSubgroup(
@@ -383,37 +384,55 @@ async function createRepositories() {
       }
     }
 
-    // Create student repositories
+    // -------------------------------------------------------------------------
+    // Create or retrieve repositories
+    // -------------------------------------------------------------------------
+
     creationResults.value = await mapWithConcurrency(
-      repositoriesReadyToCreate.value,
+      preparationResults.value,
       5,
       async (result) => {
         let project = null
+        let projectCreated = false
+        let memberAdded = false
+        let memberAlreadyPresent = false
 
         try {
-          const namespaceId = createStudentSubgroups.value
-            ? subgroups.get(result.studentGroup).id
-            : gitlabGroup.value.id
+          const namespace = createStudentSubgroups.value
+            ? subgroups.get(result.studentGroup)
+            : gitlabGroup.value
 
-          project = await createProject(
+          const projectResult = await getOrCreateProject(
             authStore.accessToken,
+            namespace,
             result.repositoryName,
-            namespaceId,
           )
 
+          project = projectResult.project
+          projectCreated = projectResult.created
+
+          // -------------------------------------------------------------------
+          // Ensure student membership
+          // -------------------------------------------------------------------
+
           if (result.user) {
-            await addProjectMember(
+            const memberResult = await ensureProjectMember(
               authStore.accessToken,
               project.id,
               result.user.id,
             )
+
+            memberAdded = memberResult.added
+            memberAlreadyPresent = !memberResult.added
           }
 
           return {
             ...result,
             project,
-            projectCreated: true,
-            memberAdded: result.user !== null,
+            projectCreated,
+            projectAlreadyExists: !projectCreated,
+            memberAdded,
+            memberAlreadyPresent,
             error: null,
           }
         } catch (error) {
@@ -422,8 +441,10 @@ async function createRepositories() {
           return {
             ...result,
             project,
-            projectCreated: project !== null,
-            memberAdded: false,
+            projectCreated,
+            projectAlreadyExists: project !== null && !projectCreated,
+            memberAdded,
+            memberAlreadyPresent,
             error: error.message,
           }
         }
@@ -452,17 +473,22 @@ const createdRepositories = computed(() =>
   creationResults.value.filter((result) => result.projectCreated),
 )
 
-const failedRepositories = computed(() =>
-  creationResults.value.filter((result) => !result.projectCreated),
+const existingRepositories = computed(() =>
+  creationResults.value.filter(
+    (result) => result.project && !result.projectCreated,
+  ),
 )
 
-const failedMembers = computed(() =>
-  creationResults.value.filter(
-    (result) =>
-      result.projectCreated &&
-      result.user &&
-      !result.memberAdded,
-  ),
+const addedMembers = computed(() =>
+  creationResults.value.filter((result) => result.memberAdded),
+)
+
+const existingMembers = computed(() =>
+  creationResults.value.filter((result) => result.memberAlreadyPresent),
+)
+
+const failedOperations = computed(() =>
+  creationResults.value.filter((result) => result.error),
 )
 </script>
 
@@ -470,7 +496,9 @@ const failedMembers = computed(() =>
   <main>
     <header>
       <h1>Créer des dépôts</h1>
-      <p>Préparez puis créez les dépôts GitLab des étudiants.</p>
+      <p>
+        Créez ou mettez à jour les dépôts GitLab des étudiants.
+      </p>
     </header>
 
     <!-- GitLab group -->
@@ -731,8 +759,11 @@ const failedMembers = computed(() =>
     <!-- Preparation -->
 
     <section>
-      <h2>5. Préparer la création</h2>
-      <p>Aucun dépôt n'est créé à cette étape.</p>
+      <h2>5. Préparer</h2>
+      <p>
+        Les comptes GitLab sont recherchés. Aucun dépôt n'est modifié à cette
+        étape.
+      </p>
 
       <button
         type="button"
@@ -742,7 +773,7 @@ const failedMembers = computed(() =>
         {{
           preparationLoading
             ? "Préparation en cours…"
-            : `Préparer la création de ${repositories.length} dépôt(s)`
+            : `Préparer ${repositories.length} étudiant(s)`
         }}
       </button>
 
@@ -767,8 +798,8 @@ const failedMembers = computed(() =>
       <h2>6. Récapitulatif</h2>
 
       <p>
-        <strong>{{ repositoriesReadyToCreate.length }}</strong>
-        dépôt(s) sont prêts à être créés.
+        <strong>{{ preparationResults.length }}</strong>
+        étudiant(s) seront traités.
       </p>
 
       <p v-if="createStudentSubgroups">
@@ -778,7 +809,7 @@ const failedMembers = computed(() =>
 
       <p v-if="studentsWithoutGitLab.length">
         ⚠️ {{ studentsWithoutGitLab.length }} étudiant(s) n'ont pas encore de
-        compte GitLab. Leur dépôt sera créé sans membre.
+        compte GitLab. Leur dépôt sera tout de même créé ou récupéré.
       </p>
 
       <p v-if="studentsWithFallbackUsername.length">
@@ -806,7 +837,7 @@ const failedMembers = computed(() =>
             <td>{{ result.studentGroup ?? "—" }}</td>
             <td>{{ result.user?.username ?? "—" }}</td>
             <td>{{ result.repositoryName }}</td>
-            <td>{{ result.user ? "✓ Prêt" : "⚠ Dépôt sans membre" }}</td>
+            <td>{{ result.user ? "✓ Compte trouvé" : "⚠ Compte absent" }}</td>
           </tr>
         </tbody>
       </table>
@@ -818,16 +849,16 @@ const failedMembers = computed(() =>
       >
         {{
           creationLoading
-            ? "Création en cours…"
-            : `Créer ${repositoriesReadyToCreate.length} dépôt(s)`
+            ? "Traitement en cours…"
+            : `Créer / mettre à jour ${preparationResults.length} dépôt(s)`
         }}
       </button>
     </section>
 
-    <!-- Creation -->
+    <!-- Execution -->
 
     <section v-if="creationLoading || creationDone || creationError">
-      <h2>7. Création</h2>
+      <h2>7. Résultat</h2>
 
       <div v-if="creationLoading">
         <p>
@@ -845,18 +876,22 @@ const failedMembers = computed(() =>
 
       <template v-if="creationDone">
         <p>
-          ✓ <strong>{{ createdRepositories.length }}</strong>
-          dépôt(s) créé(s).
+          <strong>{{ createdRepositories.length }}</strong>
+          dépôt(s) créé(s),
+          <strong>{{ existingRepositories.length }}</strong>
+          dépôt(s) déjà existant(s).
         </p>
 
-        <p v-if="failedRepositories.length">
-          ⚠️ <strong>{{ failedRepositories.length }}</strong>
-          dépôt(s) n'ont pas pu être créés.
+        <p>
+          <strong>{{ addedMembers.length }}</strong>
+          membre(s) ajouté(s),
+          <strong>{{ existingMembers.length }}</strong>
+          déjà présent(s).
         </p>
 
-        <p v-if="failedMembers.length">
-          ⚠️ <strong>{{ failedMembers.length }}</strong>
-          dépôt(s) ont été créés mais l'étudiant n'a pas pu être ajouté.
+        <p v-if="failedOperations.length">
+          ⚠️ <strong>{{ failedOperations.length }}</strong>
+          opération(s) ont rencontré une erreur.
         </p>
 
         <table>
@@ -895,29 +930,83 @@ const failedMembers = computed(() =>
 
               <td>
                 <template v-if="!result.user">
-                  —
+                  ⚠ Compte absent
                 </template>
 
                 <template v-else-if="result.memberAdded">
-                  ✓ {{ result.user.username }}
+                  ✓ Ajouté
+                </template>
+
+                <template v-else-if="result.memberAlreadyPresent">
+                  ✓ Déjà présent
                 </template>
 
                 <template v-else>
-                  ⚠ {{ result.user.username }}
+                  —
                 </template>
               </td>
 
               <td>
-                <template v-if="result.projectCreated && !result.error">
-                  ✓ Créé
+                <template v-if="result.error">
+                  ✗ {{ result.error }}
                 </template>
 
-                <template v-else-if="result.projectCreated">
-                  ⚠ Dépôt créé — {{ result.error }}
+                <template
+                  v-else-if="
+                    result.projectCreated &&
+                    result.memberAdded
+                  "
+                >
+                  ✓ Dépôt créé + membre ajouté
+                </template>
+
+                <template
+                  v-else-if="
+                    result.projectCreated &&
+                    !result.user
+                  "
+                >
+                  ✓ Dépôt créé sans membre
+                </template>
+
+                <template
+                  v-else-if="
+                    result.projectCreated &&
+                    result.memberAlreadyPresent
+                  "
+                >
+                  ✓ Dépôt créé — membre déjà présent
+                </template>
+
+                <template
+                  v-else-if="
+                    result.projectAlreadyExists &&
+                    result.memberAdded
+                  "
+                >
+                  ✓ Dépôt existant — membre ajouté
+                </template>
+
+                <template
+                  v-else-if="
+                    result.projectAlreadyExists &&
+                    result.memberAlreadyPresent
+                  "
+                >
+                  ✓ Rien à faire
+                </template>
+
+                <template
+                  v-else-if="
+                    result.projectAlreadyExists &&
+                    !result.user
+                  "
+                >
+                  ✓ Dépôt existant — compte absent
                 </template>
 
                 <template v-else>
-                  ✗ {{ result.error }}
+                  ✓ Terminé
                 </template>
               </td>
             </tr>

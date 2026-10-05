@@ -123,6 +123,25 @@ export async function createProject(accessToken, name, namespaceId) {
   return response.json()
 }
 
+export async function getProject(accessToken, path) {
+  const response = await fetch(
+    `${GITLAB_URL}/api/v4/projects/${encodeURIComponent(path)}`,
+    {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    },
+  )
+
+  if (response.status === 404) return null
+
+  if (!response.ok) {
+    throw new Error(`Impossible de récupérer le dépôt (${response.status})`)
+  }
+
+  return response.json()
+}
+
 // =============================================================================
 // Project members
 // =============================================================================
@@ -151,6 +170,27 @@ export async function addProjectMember(
   if (!response.ok) {
     throw new Error(
       `Impossible d'ajouter l'utilisateur ${userId} au dépôt (${response.status})`,
+    )
+  }
+
+  return response.json()
+}
+
+export async function getProjectMember(accessToken, projectId, userId) {
+  const response = await fetch(
+    `${GITLAB_URL}/api/v4/projects/${projectId}/members/${userId}`,
+    {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    },
+  )
+
+  if (response.status === 404) return null
+
+  if (!response.ok) {
+    throw new Error(
+      `Impossible de récupérer le membre ${userId} (${response.status})`,
     )
   }
 
