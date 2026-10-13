@@ -3,6 +3,9 @@ const CLIENT_ID = import.meta.env.VITE_GITLAB_CLIENT_ID
 
 const REDIRECT_URI = new URL(import.meta.env.BASE_URL, window.location.origin).href
 
+console.log("Gitlab url : " + GITLAB_URL)
+console.log(`Redircect uri : ${REDIRECT_URI}`)
+
 function generateRandomString(length = 64) {
   const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~'
 
