@@ -1,6 +1,8 @@
 const GITLAB_URL = import.meta.env.VITE_GITLAB_URL
 const CLIENT_ID = import.meta.env.VITE_GITLAB_CLIENT_ID
 
+const REDIRECT_URI = new URL(import.meta.env.BASE_URL, window.location.origin).href
+
 function generateRandomString(length = 64) {
   const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~'
 
@@ -29,11 +31,9 @@ export async function loginWithGitLab() {
   sessionStorage.setItem('gitlab_code_verifier', codeVerifier)
   sessionStorage.setItem('gitlab_oauth_state', state)
 
-  const redirectUri = `${window.location.origin}/auth/gitlab/callback`
-
   const params = new URLSearchParams({
     client_id: CLIENT_ID,
-    redirect_uri: redirectUri,
+    redirect_uri: REDIRECT_URI,
     response_type: 'code',
     scope: 'api',
     state,

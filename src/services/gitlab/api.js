@@ -44,11 +44,7 @@ export async function getUserByUsername(accessToken, username) {
 
   const users = await response.json()
 
-  return (
-    users.find(
-      (user) => user.username.toLowerCase() === username.toLowerCase(),
-    ) ?? null
-  )
+  return users.find( (user) => user.username === username ) ?? null
 }
 
 // =============================================================================

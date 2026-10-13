@@ -31,7 +31,11 @@ const groupLoading = ref(false)
 const groupError = ref("")
 
 async function searchGitLabGroup() {
-  const path = groupPath.value.trim()
+  const path = groupPath.value
+    .trim()
+    .replace(/\s/g,"")
+    .replace(/\/$/, "")
+    .replace(/^\//, "");
 
   gitlabGroup.value = null
   groupError.value = ""
@@ -528,8 +532,10 @@ const failedOperations = computed(() =>
 
       <p v-if="gitlabGroup">
         ✓ Groupe trouvé :
-        <strong>{{ gitlabGroup.full_path }}</strong>
-        — ID {{ gitlabGroup.id }}
+        <a :href="gitlabGroup.web_url">
+          <strong>{{ gitlabGroup.full_path }}</strong>
+          — ID {{ gitlabGroup.id }}
+        </a>
       </p>
 
       <p v-if="groupError">{{ groupError }}</p>
@@ -647,11 +653,15 @@ const failedOperations = computed(() =>
     <section>
       <h2>3. Organisation</h2>
 
+      <p v-if="!selectedCourse">
+        ⚠️ Sélectionner un cours avant la répartition par groupe tu dois.
+      </p>
       <label>
         <input
           v-model="createStudentSubgroups"
           type="checkbox"
           @change="subgroupOptionChanged"
+          :disabled="!selectedCourse"
         />
         Créer un sous-groupe GitLab pour chaque groupe d'étudiants
       </label>
@@ -739,14 +749,14 @@ const failedOperations = computed(() =>
                 gitlabGroup
               "
             >
-              {{ gitlabGroup.full_path }}/{{ repository.studentGroup }}/
+              {{ gitlabGroup.full_path }}/{{ repository.studentGroup }}/<strong>{{ repository.name }}</strong>
             </template>
 
             <template v-else-if="gitlabGroup">
-              {{ gitlabGroup.full_path }}/
+              {{ gitlabGroup.full_path }}/<strong>{{ repository.name }}</strong>
             </template>
 
-            <strong>{{ repository.name }}</strong>
+
           </li>
         </ul>
 

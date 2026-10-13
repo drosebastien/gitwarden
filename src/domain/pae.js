@@ -1,14 +1,14 @@
-// =============================================================================
-// Cours
-// =============================================================================
+// ==================================================================
+//                                Cours
+// ==================================================================
 
 export function getCourses(pae) {
   return [...new Set(pae.map(([course]) => course))].sort()
 }
 
-// =============================================================================
-// Groupes
-// =============================================================================
+// ==================================================================
+//                               Groups
+// ==================================================================
 
 export function getGroups(pae, course) {
   if (!course) return []
@@ -34,20 +34,20 @@ export function getGroupsWithStudentCount(pae, course) {
       groups.set(group, new Set())
     }
 
-    groups.get(group).add(String(matricule))
+    groups.get(group).add(matricule)
   }
 
   return [...groups.entries()]
-    .map(([name, students]) => ({
+    .map( ([name, students]) => ({
       name,
       count: students.size,
-    }))
+    }) )
     .sort((a, b) => a.name.localeCompare(b.name))
 }
 
-// =============================================================================
-// Étudiants
-// =============================================================================
+// ==================================================================
+//                             Students
+// ==================================================================
 
 export function getStudents(pae, course, group = null) {
   if (!course) return []
@@ -61,7 +61,7 @@ export function getStudents(pae, course, group = null) {
 
           return true
         })
-        .map(([, , matricule]) => String(matricule)),
+        .map(([, , matricule]) => matricule),
     ),
   ]
 }
@@ -69,18 +69,18 @@ export function getStudents(pae, course, group = null) {
 export function getStudentGroup(pae, course, matricule) {
   if (!course) return null
 
-  const student = pae.find(
-    ([studentCourse, , studentMatricule]) =>
+  const student = pae
+    .find(([studentCourse, , studentMatricule]) =>
       studentCourse === course &&
-      String(studentMatricule) === String(matricule),
+      studentMatricule === matricule,
   )
 
   return student?.[1] ?? null
 }
 
-// =============================================================================
-// Index matricule → groupe
-// =============================================================================
+// ==================================================================
+//                    Mapping matricule -> group
+// ==================================================================
 
 export function getStudentGroupMap(pae, course) {
   const result = new Map()
@@ -88,17 +88,16 @@ export function getStudentGroupMap(pae, course) {
   if (!course) return result
 
   for (const [studentCourse, group, matricule] of pae) {
-    if (studentCourse !== course) continue
-
-    result.set(String(matricule), group)
+    if (studentCourse === course)
+      result.set(String(matricule), group)
   }
 
   return result
 }
 
-// =============================================================================
-// Fraîcheur du PAE
-// =============================================================================
+// ==================================================================
+//                           Update PAE
+// ==================================================================
 
 export function getPaeStatus(lastUpdate, now = new Date()) {
   if (!lastUpdate) {
