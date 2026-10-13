@@ -8,7 +8,7 @@ import router from './router'
 
 const params = new URLSearchParams(window.location.search)
 
-if (params.has('code') && !window.location.hash) {
+if (params.has('code')) {
   window.location.hash = '/auth/gitlab/callback'
 }
 

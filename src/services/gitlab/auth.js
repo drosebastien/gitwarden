@@ -1,23 +1,30 @@
 const GITLAB_URL = import.meta.env.VITE_GITLAB_URL
 const CLIENT_ID = import.meta.env.VITE_GITLAB_CLIENT_ID
 
-const REDIRECT_URI = new URL(import.meta.env.BASE_URL, window.location.origin).href
+const REDIRECT_URI = new URL(
+  import.meta.env.BASE_URL,
+  window.location.origin,
+).href
 
-console.log("Gitlab url : " + GITLAB_URL)
-console.log(`Redircect uri : ${REDIRECT_URI}`)
+// =============================================================================
+// PKCE
+// =============================================================================
 
 function generateRandomString(length = 64) {
-  const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~'
+  const characters =
+    'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~'
 
   const randomValues = new Uint32Array(length)
   crypto.getRandomValues(randomValues)
 
-  return Array.from(randomValues, (value) => characters[value % characters.length]).join('')
+  return Array.from(
+    randomValues,
+    (value) => characters[value % characters.length],
+  ).join('')
 }
 
 async function generateCodeChallenge(codeVerifier) {
   const data = new TextEncoder().encode(codeVerifier)
-
   const digest = await crypto.subtle.digest('SHA-256', data)
 
   return btoa(String.fromCharCode(...new Uint8Array(digest)))
@@ -25,6 +32,10 @@ async function generateCodeChallenge(codeVerifier) {
     .replace(/\//g, '_')
     .replace(/=+$/, '')
 }
+
+// =============================================================================
+// Login
+// =============================================================================
 
 export async function loginWithGitLab() {
   const codeVerifier = generateRandomString()
@@ -47,6 +58,10 @@ export async function loginWithGitLab() {
   window.location.href = `${GITLAB_URL}/oauth/authorize?${params}`
 }
 
+// =============================================================================
+// Token exchange
+// =============================================================================
+
 export async function exchangeCodeForToken(code) {
   const codeVerifier = sessionStorage.getItem('gitlab_code_verifier')
 
@@ -54,26 +69,24 @@ export async function exchangeCodeForToken(code) {
     throw new Error('PKCE code verifier introuvable')
   }
 
-  const redirectUri = `${window.location.origin}/auth/gitlab/callback`
-
   const response = await fetch(`${GITLAB_URL}/oauth/token`, {
     method: 'POST',
-
     headers: {
       'Content-Type': 'application/x-www-form-urlencoded',
     },
-
     body: new URLSearchParams({
       client_id: CLIENT_ID,
       grant_type: 'authorization_code',
       code,
-      redirect_uri: redirectUri,
+      redirect_uri: REDIRECT_URI,
       code_verifier: codeVerifier,
     }),
   })
 
   if (!response.ok) {
-    throw new Error(`Impossible de récupérer le token GitLab (${response.status})`)
+    throw new Error(
+      `Impossible de récupérer le token GitLab (${response.status})`,
+    )
   }
 
   const tokens = await response.json()
