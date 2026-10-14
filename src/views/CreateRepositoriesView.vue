@@ -8,8 +8,8 @@ import {
   getStudentGroupMap,
   getStudents,
 } from "@/domain/pae"
-import { getGroup } from "@/services/gitlab/api"
 import { getOrCreateSubgroup } from "@/services/gitlab/groups"
+import GitLabGroupInput from "@/components/GitLabGroupInput.vue"
 import {
   ensureProjectMember,
   getOrCreateProject,
@@ -26,45 +26,10 @@ const authStore = useAuthStore()
 //                            GitLab group
 // ==================================================================
 
-const groupPath = ref("")
 const gitlabGroup = ref(null)
-const groupLoading = ref(false)
-const groupError = ref("")
 
-async function searchGitLabGroup() {
-  const path = groupPath.value
-    .trim()
-    .replace(/\s/g,"")
-    .replace(/\/$/, "")
-    .replace(/^\//, "");
-
-  gitlabGroup.value = null
-  groupError.value = ""
-
-  if (!path) {
-    groupError.value = "Indiquez le chemin du groupe GitLab."
-    return
-  }
-
-  groupLoading.value = true
-
-  try {
-    gitlabGroup.value = await getGroup(authStore.accessToken, path)
-
-    if (!gitlabGroup.value) {
-      groupError.value = "Groupe GitLab introuvable."
-    }
-  } catch (error) {
-    console.error(error)
-    groupError.value = "Impossible de rechercher le groupe GitLab."
-  } finally {
-    groupLoading.value = false
-  }
-}
-
-function groupPathChanged() {
-  gitlabGroup.value = null
-  groupError.value = ""
+function gitLabGroupChanged(group) {
+  gitlabGroup.value = group
   resetPreparation()
 }
 
@@ -510,37 +475,7 @@ const failedOperations = computed(() =>
     <!-- GitLab group -->
 
     <section>
-      <h2>1. Groupe GitLab</h2>
-      <p>Indiquez le groupe dans lequel les dépôts seront créés.</p>
-
-      <label for="group-path">Chemin du groupe</label>
-
-      <input
-        id="group-path"
-        v-model="groupPath"
-        type="text"
-        placeholder="2026-2027/5don4d/projets"
-        @input="groupPathChanged"
-        @keyup.enter="searchGitLabGroup"
-      />
-
-      <button
-        type="button"
-        :disabled="groupLoading || !groupPath.trim()"
-        @click="searchGitLabGroup"
-      >
-        {{ groupLoading ? "Recherche…" : "Rechercher le groupe" }}
-      </button>
-
-      <p v-if="gitlabGroup">
-        ✓ Groupe trouvé :
-        <a :href="gitlabGroup.web_url">
-          <strong>{{ gitlabGroup.full_path }}</strong>
-          — ID {{ gitlabGroup.id }}
-        </a>
-      </p>
-
-      <p v-if="groupError">{{ groupError }}</p>
+      <GitLabGroupInput @git-lab-group-selected="gitLabGroupChanged"/>
     </section>
 
     <!-- Students -->
@@ -736,7 +671,10 @@ const failedOperations = computed(() =>
         Le pattern doit contenir <code>{m}</code>.
       </p>
 
-      <template v-if="repositories.length">
+      <template v-if="
+        repositories.length &&
+        gitlabGroup
+        ">
         <h3>Aperçu</h3>
 
         <ul>
@@ -747,14 +685,13 @@ const failedOperations = computed(() =>
             <template
               v-if="
                 createStudentSubgroups &&
-                repository.studentGroup &&
-                gitlabGroup
+                repository.studentGroup
               "
             >
               {{ gitlabGroup.full_path }}/{{ repository.studentGroup }}/<strong>{{ repository.name }}</strong>
             </template>
 
-            <template v-else-if="gitlabGroup">
+            <template v-else>
               {{ gitlabGroup.full_path }}/<strong>{{ repository.name }}</strong>
             </template>
 

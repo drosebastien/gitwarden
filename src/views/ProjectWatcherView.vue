@@ -3,11 +3,10 @@ import { ref } from 'vue';
 import BaseLayout from '@/components/layout/BaseLayout.vue';
 import GitLabGroupInput from '@/components/GitLabGroupInput.vue';
 
-const gitLabGroup = ref(null);
+const gitlabGroup = ref(null);
 
-function setGitLabGroup(group) {
-  console.log("hello")
-  gitLabGroup.value = group;
+function gitLabGroupChanged(group) {
+  gitlabGroup.value = group
 }
 
 </script>
@@ -21,8 +20,8 @@ function setGitLabGroup(group) {
       </p>
     </header>
     <section>
-      <GitLabGroupInput @git-lab-group-selected="setGitLabGroup"/>
-      <p>group : {{ gitLabGroup.name }}</p>
+      <GitLabGroupInput @git-lab-group-selected="gitLabGroupChanged"/>
+      <p v-if="gitlabGroup">group : {{ gitlabGroup.name }}</p>
     </section>
   </BaseLayout>
 </template>
