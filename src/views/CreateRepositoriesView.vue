@@ -18,12 +18,13 @@ import { getPaeLastUpdate, loadPae } from "@/services/pae"
 import { findStudentGitLabUser } from "@/services/students"
 import { useAuthStore } from "@/stores/auth"
 import { mapWithConcurrency } from "@/utils/async"
+import BaseLayout from "@/components/layout/BaseLayout.vue"
 
 const authStore = useAuthStore()
 
-// =============================================================================
-// GitLab group
-// =============================================================================
+// ==================================================================
+//                            GitLab group
+// ==================================================================
 
 const groupPath = ref("")
 const gitlabGroup = ref(null)
@@ -497,6 +498,7 @@ const failedOperations = computed(() =>
 </script>
 
 <template>
+  <BaseLayout>
   <main>
     <header>
       <h1>Créer des dépôts</h1>
@@ -1025,4 +1027,5 @@ const failedOperations = computed(() =>
       </template>
     </section>
   </main>
+  </BaseLayout>
 </template>

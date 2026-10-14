@@ -2,6 +2,7 @@ import { createRouter, createWebHashHistory } from 'vue-router'
 import HomeView from '@/views/HomeView.vue'
 import GitLabCallbackView from '@/views/GitLabCallbackView.vue'
 import CreateRepositoriesView from '@/views/CreateRepositoriesView.vue'
+import ProjectWatcherView from '@/views/ProjectWatcherView.vue'
 
 const router = createRouter({
   history: createWebHashHistory(import.meta.env.BASE_URL),
@@ -20,6 +21,14 @@ const router = createRouter({
       path: '/create',
       name: 'create',
       component: CreateRepositoriesView,
+      meta: {
+        requiresAuth: true,
+      },
+    },
+    {
+      path: '/projects-watcher',
+      name: 'projects-watcher',
+      component: ProjectWatcherView,
       meta: {
         requiresAuth: true,
       },

@@ -18,17 +18,11 @@ onMounted(async () => {
     const code = params.get('code')
     const state = params.get('state')
 
-    console.log('OAuth callback')
-    console.log('code:', code)
-    console.log('state:', state)
-
     if (!code) {
       throw new Error('Code OAuth GitLab manquant')
     }
 
     const expectedState = sessionStorage.getItem('gitlab_oauth_state')
-
-    console.log('expected state:', expectedState)
 
     if (!state || state !== expectedState) {
       throw new Error('État OAuth invalide')
@@ -36,22 +30,12 @@ onMounted(async () => {
 
     sessionStorage.removeItem('gitlab_oauth_state')
 
-    console.log('Exchanging code...')
 
     const tokens = await exchangeCodeForToken(code)
 
-    console.log('Token received:', !!tokens.access_token)
-
     const user = await getCurrentUser(tokens.access_token)
 
-    console.log('User:', user.username)
-
     authStore.login(user, tokens)
-
-    console.log(
-      'Stored token:',
-      !!sessionStorage.getItem('gitlab_access_token'),
-    )
 
     await router.replace('/')
   } catch (e) {

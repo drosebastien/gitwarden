@@ -19,7 +19,8 @@ const authStore = useAuthStore()
         (@{{ authStore.user.username }})
       </p>
 
-      <RouterLink to="/create"> Créer des dépôts </RouterLink>
+      <RouterLink :to="{ name: 'create'}"> Créer des dépôts </RouterLink>
+      <RouterLink :to="{ name: 'projects-watcher'}"> Suivi de projet </RouterLink>
     </template>
 
     <GitLabLoginButton v-else />

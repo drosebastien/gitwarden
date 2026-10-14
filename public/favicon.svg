@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 1200" role="img" aria-labelledby="title desc">
+  <title id="title">GitWarden — Git et 2 multicolore</title>
+  <desc id="desc">Grand disque bleu portant une branche Git blanche et chiffre 2 multicolore en bas à droite.</desc>
+  <defs>
+    <clipPath id="two-clip">
+      <path d="M 778 790 C 778 711 841 659 932 659 C 1029 659 1093 716 1093 793 C 1093 854 1056 893 1002 936 L 879 1033 H 1090 V 1103 H 779 V 1028 L 951 884 C 991 851 1014 823 1014 791 C 1014 755 983 732 935 732 C 885 732 857 756 855 790 Z"/>
+    </clipPath>
+  </defs>
+  <circle cx="570" cy="558" r="485" fill="#086acb"/>
+  <g fill="none" stroke="#fff" stroke-width="68" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M 432 335 V 803 L 764 518"/>
+  </g>
+  <g fill="#086acb" stroke="#fff" stroke-width="62">
+    <circle cx="432" cy="335" r="77"/>
+    <circle cx="432" cy="803" r="77"/>
+    <circle cx="764" cy="518" r="77"/>
+  </g>
+  <path d="M 778 790 C 778 711 841 659 932 659 C 1029 659 1093 716 1093 793 C 1093 854 1056 893 1002 936 L 879 1033 H 1090 V 1103 H 779 V 1028 L 951 884 C 991 851 1014 823 1014 791 C 1014 755 983 732 935 732 C 885 732 857 756 855 790 Z" fill="none" stroke="white" stroke-width="34" stroke-linejoin="round"/>
+  <g clip-path="url(#two-clip)">
+    <rect x="760" y="650" width="175" height="240" fill="#f9a329"/>
+    <rect x="935" y="650" width="175" height="240" fill="#ec2181"/>
+    <rect x="760" y="890" width="350" height="110" fill="#36c39d"/>
+    <rect x="760" y="1000" width="350" height="120" fill="#29a9ed"/>
+  </g>
+</svg>
