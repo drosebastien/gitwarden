@@ -2,20 +2,19 @@
 import { ref } from 'vue';
 import BaseLayout from '@/components/layout/BaseLayout.vue';
 import GitLabGroupInput from '@/components/GitLabGroupInput.vue';
-import GitlabProjectNameInput from '@/components/GitlabProjectNameInput.vue';
+import RepositoryPatternInput from '@/components/RepositoryPatternInput.vue';
 
 const gitlabGroup = ref(null);
-const isValid = ref(false);
 
-const projectName = ref("project-:m:")
-
+const projectName = ref("p-:m:")
+const patternIsValid = ref(false);
 
 function gitLabGroupChanged(group) {
   gitlabGroup.value = group
 }
 
 function patternChanged(v) {
-  isValid.value = v
+  patternIsValid.value = v
 }
 
 </script>
@@ -33,8 +32,8 @@ function patternChanged(v) {
       <p v-if="gitlabGroup">group : {{ gitlabGroup.name }}</p>
     </section>
     <section>
-      <GitlabProjectNameInput v-model="projectName" @pattern-is-valid="patternChanged"/>
-      <p>{{ projectName }} / est valide : {{ isValid }}</p>
+      <RepositoryPatternInput v-model="projectName" @validity-changed="patternChanged"/>
+      <p>{{ projectName }} / est valide : {{ patternIsValid }}</p>
     </section>
   </BaseLayout>
 </template>
