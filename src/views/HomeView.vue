@@ -1,5 +1,5 @@
 <script setup>
-import GitLabLoginButton from '@/components/GitLabLoginButton.vue'
+import GitLabLoginButton from '@/components/auth/GitLabLoginButton.vue'
 import { RouterLink } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 
