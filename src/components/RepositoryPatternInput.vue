@@ -1,5 +1,6 @@
 <script setup>
-import { onMounted, computed, watch } from 'vue'
+import { computed, watch } from 'vue'
+
 const PROJECT_PATH_REGEX =
   /^[a-zA-Z0-9][a-zA-Z0-9._-]*[a-zA-Z0-9]$/
 
@@ -34,6 +35,8 @@ watch(
 
 <template>
   <div>
+    <label for="repository-pattern">Pattern</label>
+
     <input
     id="repository-pattern"
     v-model="model"

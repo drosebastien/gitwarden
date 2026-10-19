@@ -67,20 +67,15 @@ onMounted(async () => {
 // PAE freshness
 // =============================================================================
 
-const paeLastUpdate = computed(() => {
-  if (!paeLastCommit.value) return null
-  return new Date(paeLastCommit.value.committed_date)
-})
-
-const paeStatus = computed(() => getPaeStatus(paeLastUpdate.value))
+const paeStatus = computed(() => getPaeStatus(paeLastCommit.value))
 
 const formattedPaeLastUpdate = computed(() => {
-  if (!paeLastUpdate.value) return ""
+  if (!paeStatus.value) return ""
 
   return new Intl.DateTimeFormat("fr-BE", {
     dateStyle: "long",
     timeStyle: "short",
-  }).format(paeLastUpdate.value)
+  }).format(paeStatus.value.updateDate)
 })
 
 // =============================================================================
@@ -489,7 +484,7 @@ const failedOperations = computed(() =>
 
       <template v-else>
         <div
-          v-if="paeLastUpdate"
+          v-if="paeLastCommit"
           :class="{ 'pae-warning': paeStatus.mayBeOutdated }"
         >
           <template v-if="paeStatus.mayBeOutdated">

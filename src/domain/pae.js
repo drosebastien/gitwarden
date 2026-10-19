@@ -99,8 +99,8 @@ export function getStudentGroupMap(pae, course) {
 //                           Update PAE
 // ==================================================================
 
-export function getPaeStatus(lastUpdate, now = new Date()) {
-  if (!lastUpdate) {
+export function getPaeStatus(lastCommit) {
+  if (!lastCommit) {
     return {
       ageInDays: null,
       sensitivePeriod: false,
@@ -108,7 +108,8 @@ export function getPaeStatus(lastUpdate, now = new Date()) {
     }
   }
 
-  const updateDate = new Date(lastUpdate)
+  const now = new Date()
+  const updateDate = new Date(lastCommit.committed_date)
   const month = now.getMonth() + 1
   const day = now.getDate()
 
@@ -122,6 +123,7 @@ export function getPaeStatus(lastUpdate, now = new Date()) {
   const ageInDays = Math.floor(milliseconds / (1000 * 60 * 60 * 24))
 
   return {
+    updateDate,
     ageInDays,
     sensitivePeriod,
     mayBeOutdated: sensitivePeriod && ageInDays >= 5,

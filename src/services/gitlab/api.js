@@ -27,24 +27,19 @@ export async function getCurrentUser(accessToken) {
 export async function getUserByUsername(accessToken, username) {
   const params = new URLSearchParams({ username })
 
-  const response = await fetch(
-    `${GITLAB_URL}/api/v4/users?${params}`,
-    {
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-      },
+  const response = await fetch(`${GITLAB_URL}/api/v4/users?${params}`, {
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
     },
-  )
+  })
 
   if (!response.ok) {
-    throw new Error(
-      `Impossible de rechercher l'utilisateur ${username} (${response.status})`,
-    )
+    throw new Error(`Impossible de rechercher l'utilisateur ${username} (${response.status})`)
   }
 
   const users = await response.json()
 
-  return users.find( (user) => user.username === username ) ?? null
+  return users.find((user) => user.username === username) ?? null
 }
 
 // =============================================================================
@@ -52,14 +47,11 @@ export async function getUserByUsername(accessToken, username) {
 // =============================================================================
 
 export async function getGroup(accessToken, path) {
-  const response = await fetch(
-    `${GITLAB_URL}/api/v4/groups/${encodeURIComponent(path)}`,
-    {
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-      },
+  const response = await fetch(`${GITLAB_URL}/api/v4/groups/${encodeURIComponent(path)}`, {
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
     },
-  )
+  })
 
   if (response.status === 404) return null
 
@@ -72,10 +64,10 @@ export async function getGroup(accessToken, path) {
 
 export async function createSubgroup(accessToken, name, parentId) {
   const response = await fetch(`${GITLAB_URL}/api/v4/groups`, {
-    method: "POST",
+    method: 'POST',
     headers: {
       Authorization: `Bearer ${accessToken}`,
-      "Content-Type": "application/json",
+      'Content-Type': 'application/json',
     },
     body: JSON.stringify({
       name,
@@ -85,9 +77,7 @@ export async function createSubgroup(accessToken, name, parentId) {
   })
 
   if (!response.ok) {
-    throw new Error(
-      `Impossible de créer le sous-groupe ${name} (${response.status})`,
-    )
+    throw new Error(`Impossible de créer le sous-groupe ${name} (${response.status})`)
   }
 
   return response.json()
@@ -99,10 +89,10 @@ export async function createSubgroup(accessToken, name, parentId) {
 
 export async function createProject(accessToken, name, namespaceId) {
   const response = await fetch(`${GITLAB_URL}/api/v4/projects`, {
-    method: "POST",
+    method: 'POST',
     headers: {
       Authorization: `Bearer ${accessToken}`,
-      "Content-Type": "application/json",
+      'Content-Type': 'application/json',
     },
     body: JSON.stringify({
       name,
@@ -111,23 +101,18 @@ export async function createProject(accessToken, name, namespaceId) {
   })
 
   if (!response.ok) {
-    throw new Error(
-      `Impossible de créer le dépôt ${name} (${response.status})`,
-    )
+    throw new Error(`Impossible de créer le dépôt ${name} (${response.status})`)
   }
 
   return response.json()
 }
 
 export async function getProject(accessToken, path) {
-  const response = await fetch(
-    `${GITLAB_URL}/api/v4/projects/${encodeURIComponent(path)}`,
-    {
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-      },
+  const response = await fetch(`${GITLAB_URL}/api/v4/projects/${encodeURIComponent(path)}`, {
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
     },
-  )
+  })
 
   if (response.status === 404) return null
 
@@ -148,46 +133,36 @@ export async function addProjectMember(
   userId,
   accessLevel = GITLAB_ACCESS_LEVEL.DEVELOPER,
 ) {
-  const response = await fetch(
-    `${GITLAB_URL}/api/v4/projects/${projectId}/members`,
-    {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        user_id: userId,
-        access_level: accessLevel,
-      }),
+  const response = await fetch(`${GITLAB_URL}/api/v4/projects/${projectId}/members`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      'Content-Type': 'application/json',
     },
-  )
+    body: JSON.stringify({
+      user_id: userId,
+      access_level: accessLevel,
+    }),
+  })
 
   if (!response.ok) {
-    throw new Error(
-      `Impossible d'ajouter l'utilisateur ${userId} au dépôt (${response.status})`,
-    )
+    throw new Error(`Impossible d'ajouter l'utilisateur ${userId} au dépôt (${response.status})`)
   }
 
   return response.json()
 }
 
 export async function getProjectMember(accessToken, projectId, userId) {
-  const response = await fetch(
-    `${GITLAB_URL}/api/v4/projects/${projectId}/members/${userId}`,
-    {
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-      },
+  const response = await fetch(`${GITLAB_URL}/api/v4/projects/${projectId}/members/${userId}`, {
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
     },
-  )
+  })
 
   if (response.status === 404) return null
 
   if (!response.ok) {
-    throw new Error(
-      `Impossible de récupérer le membre ${userId} (${response.status})`,
-    )
+    throw new Error(`Impossible de récupérer le membre ${userId} (${response.status})`)
   }
 
   return response.json()
@@ -210,7 +185,7 @@ export async function getRepositoryFile(accessToken, projectId, filePath) {
   )
 
   if (response.status === 403 || response.status === 404) {
-    throw new Error("PAE_ACCESS_DENIED")
+    throw new Error('FILE_UNAVAILABLE')
   }
 
   if (!response.ok) {
@@ -227,7 +202,7 @@ export async function getRepositoryFile(accessToken, projectId, filePath) {
 export async function getFileLastCommit(accessToken, projectId, filePath) {
   const params = new URLSearchParams({
     path: filePath,
-    per_page: "1",
+    per_page: '1',
   })
 
   const response = await fetch(
@@ -240,9 +215,7 @@ export async function getFileLastCommit(accessToken, projectId, filePath) {
   )
 
   if (!response.ok) {
-    throw new Error(
-      `Impossible de récupérer le dernier commit (${response.status})`,
-    )
+    throw new Error(`Impossible de récupérer le dernier commit (${response.status})`)
   }
 
   const commits = await response.json()
