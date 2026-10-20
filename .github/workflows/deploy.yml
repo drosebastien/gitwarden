@@ -16,6 +16,11 @@ permissions:
 
 jobs:
   build:
+    run: |
+      echo "BASE_PATH=$BASE_PATH"
+      npm run build
+    env:
+      BASE_PATH: ${{ vars.BASE_PATH }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout your repository using git
