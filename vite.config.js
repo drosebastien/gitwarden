@@ -11,7 +11,7 @@ export default defineConfig(({ mode }) => {
 
   return {
     plugins: [vue(), vueDevTools()],
-    base: env.BASE_PATH,
+    base: process.env.BASE_PATH ?? env.BASE_PATH ?? '/',
     resolve: {
       alias: {
         '@': fileURLToPath(new URL('./src', import.meta.url)),
