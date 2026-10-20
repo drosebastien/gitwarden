@@ -16,15 +16,16 @@ permissions:
 
 jobs:
   build:
-    run: |
-      echo "BASE_PATH=$BASE_PATH"
-      npm run build
+    runs-on: ubuntu-latest
+
     env:
       BASE_PATH: ${{ vars.BASE_PATH }}
-    runs-on: ubuntu-latest
+
     steps:
       - name: Checkout your repository using git
         uses: actions/checkout@v7
+      - name: Check environment
+        run: echo "BASE_PATH=$BASE_PATH"
       - name: Install, build, and upload your site
         uses: withastro/action@v6
         # with:
