@@ -38,6 +38,7 @@ jobs:
       - name: Build
         run: npm run build
         env:
+          BASE_PATH: ${{ vars.BASE_PATH }}
           VITE_GITLAB_URL: ${{ vars.VITE_GITLAB_URL }}
           VITE_GITLAB_CLIENT_ID: ${{ vars.VITE_GITLAB_CLIENT_ID }}
           VITE_PAE_PROJECT_ID: ${{ vars.VITE_PAE_PROJECT_ID }}
