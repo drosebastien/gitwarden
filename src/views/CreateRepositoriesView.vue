@@ -17,6 +17,7 @@ import { findStudentGitLabUser } from '@/services/students'
 import { useAuthStore } from '@/stores/auth'
 import { mapWithConcurrency } from '@/utils/async'
 import BaseLayout from '@/components/layout/BaseLayout.vue'
+import RepositoryPatternInput from '@/components/RepositoryPatternInput.vue'
 
 // ==================================================================
 //                              auth
@@ -125,11 +126,8 @@ function subgroupOptionChanged() {
 // Repository names
 // =============================================================================
 
-const repositoryPattern = ref('projet-{m}')
-
-const patternIsValid = computed(() => {
-  return repositoryPattern.value.trim() !== '' && repositoryPattern.value.includes('{m}')
-})
+const repositoryPattern = ref('projet-g{m}')
+const patternIsValid = ref(false)
 
 const repositories = computed(() => {
   if (!patternIsValid.value) return []
@@ -141,7 +139,8 @@ const repositories = computed(() => {
   }))
 })
 
-function patternChanged() {
+function patternChanged(isValid) {
+  patternIsValid.value = isValid
   resetPreparation()
 }
 
@@ -524,19 +523,7 @@ const failedOperations = computed(() => creationResults.value.filter((result) =>
       <section>
         <h2>4. Nom des dépôts</h2>
 
-        <label for="repository-pattern">Pattern</label>
-
-        <input
-          id="repository-pattern"
-          v-model="repositoryPattern"
-          type="text"
-          placeholder="projet-{m}"
-          @input="patternChanged"
-        />
-
-        <p>Variable disponible : <code>{m}</code> — matricule de l'étudiant.</p>
-
-        <p v-if="!patternIsValid">Le pattern doit contenir <code>{m}</code>.</p>
+        <RepositoryPatternInput v-model="repositoryPattern" @validity-changed="patternChanged" />
 
         <template v-if="repositories.length && gitlabGroup">
           <h3>Aperçu</h3>

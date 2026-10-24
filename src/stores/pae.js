@@ -3,7 +3,14 @@
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 
-import { getCourses, getGroups, getStudentGroupMap, getStudents, getPaeStatus } from '@/domain/pae'
+import {
+  getCourses as getPaeCourses,
+  getGroups as getPaeGroups,
+  getStudentGroupMap as createStudentGroupMap,
+  getGroupsWithStudentCount,
+  getStudents as getPaeStudents,
+  getPaeStatus,
+} from '@/domain/pae'
 
 import { getPaeLastUpdate, loadPae } from '@/services/pae'
 
@@ -14,7 +21,7 @@ export const usePaeStore = defineStore('pae', () => {
   const loaded = ref(false)
   const error = ref(null)
 
-  const courses = computed(() => getCourses(pae.value))
+  const courses = computed(() => getPaeCourses(pae.value))
 
   const paeStatus = computed(() => {
     return getPaeStatus(paeLastCommit.value)
@@ -45,21 +52,24 @@ export const usePaeStore = defineStore('pae', () => {
     }
   }
 
-  function groups(course) {
-    return getGroups(pae.value, course)
+  function getGroups(course) {
+    return getPaeGroups(pae.value, course)
   }
 
-  function students(course, group = null) {
-    return getStudents(pae.value, course, group)
+  function getStudents(course, group = null) {
+    return getPaeStudents(pae.value, course, group)
   }
 
-  function studentGroupMap(course) {
-    return getStudentGroupMap(pae.value, course)
+  function getStudentGroupMap(course) {
+    return createStudentGroupMap(pae.value, course)
+  }
+
+  function getCourseGroupsWithStudentCount(course) {
+    return getGroupsWithStudentCount(pae.value, course)
   }
 
   return {
     pae,
-    paeLastCommit,
     paeStatus,
     loading,
     loaded,
@@ -67,8 +77,9 @@ export const usePaeStore = defineStore('pae', () => {
     error,
 
     load,
-    groups,
-    students,
-    studentGroupMap,
+    getGroups,
+    getStudents,
+    getStudentGroupMap,
+    getCourseGroupsWithStudentCount,
   }
 })

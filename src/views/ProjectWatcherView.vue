@@ -5,7 +5,6 @@ import GitLabGroupInput from '@/components/GitLabGroupInput.vue'
 import RepositoryPatternInput from '@/components/RepositoryPatternInput.vue'
 import PaeUpdateLabelView from '@/components/PaeUpdateLabelView.vue'
 import { usePaeStore } from '@/stores/pae'
-import { getGroupsWithStudentCount, getStudents } from '@/domain/pae'
 import { useAuthStore } from '@/stores/auth'
 
 const paeStore = usePaeStore()
@@ -30,25 +29,57 @@ function gitLabGroupChanged(group) {
 // ==================================================================
 
 const selectedCourse = ref('')
-const courses = paeStore.courses
-
-function courseChanged() {}
-
 const selectedGroup = ref('')
 
-const groups = computed(() => getGroupsWithStudentCount(paeStore.pae, selectedCourse.value))
-const courseStudents = computed(() => getStudents(paeStore.pae, selectedCourse.value))
+const courseStudents = computed(() => paeStore.getStudents(selectedCourse.value))
+const courseGroupsWithStudentCount = computed(() =>
+  paeStore.getCourseGroupsWithStudentCount(selectedCourse.value),
+)
+
+function courseChanged() {
+  selectedGroup.value = ''
+}
 
 // ==================================================================
 //                       repositories pattern
 // ==================================================================
 
-const repositoryPattern = ref('p-:m:')
+const repositoryPattern = ref('projet-g{m}')
 const patternIsValid = ref(false)
 
-function patternChanged(v) {
-  patternIsValid.value = v
+function patternChanged(isValid) {
+  patternIsValid.value = isValid
 }
+
+// ==================================================================
+//                            students
+// ==================================================================
+
+const studentsText = ref('')
+
+const studentsRaw = computed(() => {
+  return [
+    ...new Set(
+      studentsText.value
+        .split(/[\s,;]+/)
+        .map((value) => value.trim())
+        .filter(Boolean),
+    ),
+  ]
+})
+
+const students = computed(() => studentsRaw.value.filter((v) => /^\d{5}$/.test(v)))
+const invalidStudents = computed(() => studentsRaw.value.filter((v) => !/^\d{5}$/.test(v)))
+
+const selectedPaeStudents = computed(() =>
+  paeStore.getStudents(selectedCourse.value, selectedGroup.value || null),
+)
+
+function loadStudentsFromPae() {
+  studentsText.value = selectedPaeStudents.value.join('\n')
+}
+
+function studentsChanged() {}
 </script>
 
 <template>
@@ -75,7 +106,7 @@ function patternChanged(v) {
           <select id="course" v-model="selectedCourse" @change="courseChanged">
             <option value="">Sélectionner un cours…</option>
 
-            <option v-for="course in courses" :key="course" :value="course">
+            <option v-for="course in paeStore.courses" :key="course" :value="course">
               {{ course }}
             </option>
           </select>
@@ -87,10 +118,43 @@ function patternChanged(v) {
           <select id="student-group" v-model="selectedGroup" :disabled="!selectedCourse">
             <option value="">Tous les groupes — {{ courseStudents.length }} étudiants</option>
 
-            <option v-for="group in groups" :key="group.name" :value="group.name">
+            <option
+              v-for="group in courseGroupsWithStudentCount"
+              :key="group.name"
+              :value="group.name"
+            >
               {{ group.name }} — {{ group.count }} étudiants
             </option>
           </select>
+        </div>
+        <div>
+          <button type="button" :disabled="!selectedCourse" @click="loadStudentsFromPae">
+            Charger les matricules
+          </button>
+        </div>
+        <div>
+          <label for="students">Matricules</label>
+
+          <textarea
+            id="students"
+            v-model="studentsText"
+            rows="12"
+            placeholder="60192;13041,13123 14123&#10;60990&#10;60991&#10;60992"
+            @input="studentsChanged"
+          />
+
+          <p>
+            <strong>{{ students.length }}</strong> étudiant(s) dans la liste.
+          </p>
+          <div v-if="invalidStudents.length">
+            ⚠️ Certaines entrées sont invalides et seront ignorées. Un matricule doit contenir
+            exactement 5 chiffres, par exemple 61234.
+            <ul>
+              <li v-for="student in invalidStudents" :key="student">
+                {{ student }}
+              </li>
+            </ul>
+          </div>
         </div>
       </template>
     </section>
@@ -98,7 +162,6 @@ function patternChanged(v) {
     <section>
       <h2>4. Nom des dépôts</h2>
       <RepositoryPatternInput v-model="repositoryPattern" @validity-changed="patternChanged" />
-      <p>{{ repositoryPattern }} / est valide : {{ patternIsValid }}</p>
     </section>
   </BaseLayout>
 </template>

@@ -15,15 +15,13 @@ const paeError = computed(() => {
   }
 })
 
-const paeStatus = computed(() => paeStore.paeStatus)
-
 const formattedPaeLastUpdate = computed(() => {
-  if (!paeStatus.value) return ''
+  if (!paeStore.paeStatus) return ''
 
   return new Intl.DateTimeFormat('fr-BE', {
     dateStyle: 'long',
     timeStyle: 'short',
-  }).format(paeStatus.value.updateDate)
+  }).format(paeStore.paeStatus.updateDate)
 })
 </script>
 
@@ -31,12 +29,13 @@ const formattedPaeLastUpdate = computed(() => {
   <p v-if="paeStore.loading">Chargement du PAE…</p>
 
   <div v-else-if="paeStore.loaded">
-    <template v-if="paeStatus.mayBeOutdated">
+    <template v-if="paeStore.paeStatus.mayBeOutdated">
       <p>⚠️ <strong>Données PAE potentiellement obsolètes</strong></p>
 
       <p>
         Le fichier PAE n'a pas été mis à jour depuis
-        {{ paeStatus.ageInDays }} jours. Les inscriptions évoluent fortement pendant cette période.
+        {{ paeStore.paeStatus.ageInDays }} jours. Les inscriptions évoluent fortement pendant cette
+        période.
       </p>
     </template>
     <template v-else>
