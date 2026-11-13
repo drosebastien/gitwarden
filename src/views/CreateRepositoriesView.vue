@@ -490,7 +490,6 @@ const failedOperations = computed(() => creationResults.value.filter((result) =>
             Les étudiants seront automatiquement répartis dans leur sous-groupe à partir des
             informations du PAE.
           </p>
-
           <template v-if="gitlabGroup && requiredStudentGroups.length">
             <p>Sous-groupes nécessaires :</p>
 

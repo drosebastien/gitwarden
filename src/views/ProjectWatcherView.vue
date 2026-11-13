@@ -80,6 +80,32 @@ function loadStudentsFromPae() {
 }
 
 function studentsChanged() {}
+
+// ==================================================================
+//                            subgroup
+// ==================================================================
+
+// const withStudentSubgroups = ref()
+
+// const studentGroupMap = computed(() => {
+//   return paeStore.getStudentGroupMap(selectedCourse.value)
+// })
+
+// const studentsWithoutGroup = computed(() => {
+//   if (!withStudentSubgroups.value) return []
+
+//   return students.value.filter((matricule) => !studentGroupMap.value.has(matricule))
+// })
+
+// const requiredStudentGroups = computed(() => {
+//   if (!withStudentSubgroups.value) return []
+
+//   return [
+//     ...new Set(
+//       students.value.map((matricule) => studentGroupMap.value.get(matricule)).filter(Boolean),
+//     ),
+//   ].sort()
+// })
 </script>
 
 <template>
@@ -158,7 +184,39 @@ function studentsChanged() {}
         </div>
       </template>
     </section>
+    <!-- <section v-if="!selectedGroup">
+      <h2>3. Organisation</h2>
 
+      <p v-if="!selectedCourse">
+        ⚠️ Sélectionner un cours avant la répartition par groupe tu dois.
+      </p>
+
+      <label>
+        <input
+          v-model="withStudentSubgroups"
+          type="checkbox"
+          @change="subgroupOptionChanged"
+          :disabled="!selectedCourse"
+        />
+        Chercher dans un sous-groupe GitLab pour chaque groupe d'étudiants
+      </label>
+      <p v-if="!withStudentSubgroups">
+        Les dépôts seront lus directement dans
+        <strong v-if="gitlabGroup">{{ gitlabGroup.full_path }}</strong>
+        <span v-else>le groupe GitLab sélectionné</span>.
+      </p>
+      <template v-else>
+        <p>
+          Les étudiants seront automatiquement recherché dans leur sous-groupe à partir des
+          informations du PAE.
+        </p>
+        <ul>
+          <li>gitlabgroup : {{ gitlabGroup }}</li>
+          <li>requiredStudentGroups : {{ requiredStudentGroups }}</li>
+          <li>studentsWithoutGroup : {{ studentsWithoutGroup }}</li>
+        </ul>
+      </template>
+    </section> -->
     <section>
       <h2>4. Nom des dépôts</h2>
       <RepositoryPatternInput v-model="repositoryPattern" @validity-changed="patternChanged" />
