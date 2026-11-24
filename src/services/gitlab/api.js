@@ -201,29 +201,40 @@ export async function getRepositoryFile(accessToken, projectId, filePath) {
 // ==============================================
 
 export async function getProjectCommits(accessToken, projectPath, withStats=true) {
-  const params = new URLSearchParams({
-    with_stats: withStats,
-    per_page: 100,
-  })
+  const perPage = 50;
 
-  const urlEncodedPath = encodeURIComponent(projectPath)
-  const response = await fetch(
-    `${GITLAB_URL}/api/v4/projects/${urlEncodedPath}/repository/commits?${params}`,
-    {
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
+  const commits = [];
+  let newPageExist;
+
+  let page = 1
+  do {
+    const params = new URLSearchParams({
+      with_stats: withStats,
+      per_page: perPage,
+      page,
+    })
+    const urlEncodedPath = encodeURIComponent(projectPath)
+    const response = await fetch(
+      `${GITLAB_URL}/api/v4/projects/${urlEncodedPath}/repository/commits?${params}`,
+      {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
       },
-    },
-  )
+    )
 
-  if (!response.ok) {
-    console.log(`${GITLAB_URL}/api/v4/projects/${urlEncodedPath}/repository/commits?${params}`)
-    throw new Error(`Impossible de récupérer les commits (${response.status})`)
-  }
+    if (!response.ok) {
+      throw new Error(`Impossible de récupérer les commits (${response.status})`)
+    }
 
-  const commits = await response.json()
+    const pageCommits = await response.json()
+    console.log(pageCommits)
+    commits.push(pageCommits)
+    newPageExist = pageCommits.length === perPage
+    page++
+  } while (newPageExist)
 
-  return commits ?? []
+  return commits.flat()
 }
 
 export async function getFileLastCommit(accessToken, projectId, filePath) {

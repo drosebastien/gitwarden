@@ -103,9 +103,6 @@ const projectsWithCommits = ref([])
 const loadedProjectCount = ref(0)
 
 const canLoad = computed(() => {
-  console.log(!gitlabGroup.value)
-  console.log(students.value.length === 0)
-  console.log(!patternIsValid.value)
   if (!gitlabGroup.value) return false
   if (students.value.length === 0) return false
   if (!patternIsValid.value) return false
