@@ -6,9 +6,9 @@ export const GITLAB_ACCESS_LEVEL = {
   MAINTAINER: 40,
 }
 
-// =============================================================================
-// User
-// =============================================================================
+// ==============================================
+//                     User
+// ==============================================
 
 export async function getCurrentUser(accessToken) {
   const response = await fetch(`${GITLAB_URL}/api/v4/user`, {
@@ -42,9 +42,10 @@ export async function getUserByUsername(accessToken, username) {
   return users.find((user) => user.username === username) ?? null
 }
 
-// =============================================================================
-// Groups
-// =============================================================================
+
+// ==============================================
+//                    Groups
+// ==============================================
 
 export async function getGroup(accessToken, path) {
   const response = await fetch(`${GITLAB_URL}/api/v4/groups/${encodeURIComponent(path)}`, {
@@ -83,9 +84,9 @@ export async function createSubgroup(accessToken, name, parentId) {
   return response.json()
 }
 
-// =============================================================================
-// Projects
-// =============================================================================
+// ==============================================
+//                    Projects
+// ==============================================
 
 export async function createProject(accessToken, name, namespaceId) {
   const response = await fetch(`${GITLAB_URL}/api/v4/projects`, {
@@ -123,9 +124,9 @@ export async function getProject(accessToken, path) {
   return response.json()
 }
 
-// =============================================================================
-// Project members
-// =============================================================================
+// ==============================================
+//                Project Members
+// ==============================================
 
 export async function addProjectMember(
   accessToken,
@@ -168,9 +169,9 @@ export async function getProjectMember(accessToken, projectId, userId) {
   return response.json()
 }
 
-// =============================================================================
-// Repository files
-// =============================================================================
+// ==============================================
+//               Repository files
+// ==============================================
 
 export async function getRepositoryFile(accessToken, projectId, filePath) {
   const encodedPath = encodeURIComponent(filePath)
@@ -195,9 +196,35 @@ export async function getRepositoryFile(accessToken, projectId, filePath) {
   return response.json()
 }
 
-// =============================================================================
-// Commits
-// =============================================================================
+// ==============================================
+//                    Commits
+// ==============================================
+
+export async function getProjectCommits(accessToken, projectPath, withStats=true) {
+  const params = new URLSearchParams({
+    with_stats: withStats,
+    per_page: 100,
+  })
+
+  const urlEncodedPath = encodeURIComponent(projectPath)
+  const response = await fetch(
+    `${GITLAB_URL}/api/v4/projects/${urlEncodedPath}/repository/commits?${params}`,
+    {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    },
+  )
+
+  if (!response.ok) {
+    console.log(`${GITLAB_URL}/api/v4/projects/${urlEncodedPath}/repository/commits?${params}`)
+    throw new Error(`Impossible de récupérer les commits (${response.status})`)
+  }
+
+  const commits = await response.json()
+
+  return commits ?? []
+}
 
 export async function getFileLastCommit(accessToken, projectId, filePath) {
   const params = new URLSearchParams({

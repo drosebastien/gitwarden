@@ -5,9 +5,9 @@ import {
   getProjectMember,
 } from "@/services/gitlab/api"
 
-// =============================================================================
-// Projects
-// =============================================================================
+// ==============================================
+//                    Projects
+// ==============================================
 
 export async function getOrCreateProject(
   accessToken,
@@ -40,9 +40,9 @@ export async function getOrCreateProject(
   }
 }
 
-// =============================================================================
-// Members
-// =============================================================================
+// ==============================================
+//                    Members
+// ==============================================
 
 export async function ensureProjectMember(
   accessToken,
@@ -73,3 +73,4 @@ export async function ensureProjectMember(
     added: true,
   }
 }
+

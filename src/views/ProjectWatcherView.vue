@@ -6,6 +6,8 @@ import RepositoryPatternInput from '@/components/RepositoryPatternInput.vue'
 import PaeUpdateLabelView from '@/components/PaeUpdateLabelView.vue'
 import { usePaeStore } from '@/stores/pae'
 import { useAuthStore } from '@/stores/auth'
+import { mapWithConcurrency } from '@/utils/async'
+import { getProject, getProjectCommits } from '@/services/gitlab/api'
 
 const paeStore = usePaeStore()
 const authStore = useAuthStore()
@@ -41,21 +43,18 @@ function courseChanged() {
 }
 
 // ==================================================================
-//                       repositories pattern
-// ==================================================================
-
-const repositoryPattern = ref('projet-g{m}')
-const patternIsValid = ref(false)
-
-function patternChanged(isValid) {
-  patternIsValid.value = isValid
-}
-
-// ==================================================================
 //                            students
 // ==================================================================
 
 const studentsText = ref('')
+
+const selectedPaeStudents = computed(() =>
+  paeStore.getStudents(selectedCourse.value, selectedGroup.value || null),
+)
+
+function loadStudentsFromPae() {
+  studentsText.value = selectedPaeStudents.value.join('\n')
+}
 
 const studentsRaw = computed(() => {
   return [
@@ -71,41 +70,74 @@ const studentsRaw = computed(() => {
 const students = computed(() => studentsRaw.value.filter((v) => /^\d{5}$/.test(v)))
 const invalidStudents = computed(() => studentsRaw.value.filter((v) => !/^\d{5}$/.test(v)))
 
-const selectedPaeStudents = computed(() =>
-  paeStore.getStudents(selectedCourse.value, selectedGroup.value || null),
-)
-
-function loadStudentsFromPae() {
-  studentsText.value = selectedPaeStudents.value.join('\n')
-}
-
 function studentsChanged() {}
 
 // ==================================================================
-//                            subgroup
+//                       repositories pattern
 // ==================================================================
 
-// const withStudentSubgroups = ref()
+const repositoryPattern = ref('projet-g{m}')
+const patternIsValid = ref(false)
 
-// const studentGroupMap = computed(() => {
-//   return paeStore.getStudentGroupMap(selectedCourse.value)
-// })
+function patternChanged(isValid) {
+  patternIsValid.value = isValid
+}
 
-// const studentsWithoutGroup = computed(() => {
-//   if (!withStudentSubgroups.value) return []
+const repositories = computed( () => {
+  if (! patternIsValid.value) return []
 
-//   return students.value.filter((matricule) => !studentGroupMap.value.has(matricule))
-// })
+  return students.value.map(
+    (matricule) => ({
+      matricule,
+      name: repositoryPattern.value.replace('{m}', matricule),
+    })
+  )
+})
 
-// const requiredStudentGroups = computed(() => {
-//   if (!withStudentSubgroups.value) return []
+// ==================================================================
+//                            Load projects
+// ==================================================================
 
-//   return [
-//     ...new Set(
-//       students.value.map((matricule) => studentGroupMap.value.get(matricule)).filter(Boolean),
-//     ),
-//   ].sort()
-// })
+const projectsLoading = ref(false)
+const projectsWithCommits = ref([])
+const loadedProjectCount = ref(0)
+
+const canLoad = computed(() => {
+  console.log(!gitlabGroup.value)
+  console.log(students.value.length === 0)
+  console.log(!patternIsValid.value)
+  if (!gitlabGroup.value) return false
+  if (students.value.length === 0) return false
+  if (!patternIsValid.value) return false
+
+  return true
+})
+
+async function loadProjectsWithCommits() {
+  if (!canLoad.value) return
+
+  try {
+    projectsLoading.value = true
+    projectsWithCommits.value = await mapWithConcurrency(
+      repositories.value,
+      10,
+      async (repository) => {
+        const projectPath = `${gitlabGroup.value.full_path}/${repository.name}`
+        const projectResult = await getProjectCommits(authStore.accessToken, projectPath)
+        console.log(projectResult)
+      },
+      (completed) => {
+        loadedProjectCount.value = completed
+      }
+    )
+  } catch (error) {
+    console.error(error)
+
+  } finally {
+    projectsLoading.value = false
+  }
+}
+
 </script>
 
 <template>
@@ -184,42 +216,10 @@ function studentsChanged() {}
         </div>
       </template>
     </section>
-    <!-- <section v-if="!selectedGroup">
-      <h2>3. Organisation</h2>
-
-      <p v-if="!selectedCourse">
-        ⚠️ Sélectionner un cours avant la répartition par groupe tu dois.
-      </p>
-
-      <label>
-        <input
-          v-model="withStudentSubgroups"
-          type="checkbox"
-          @change="subgroupOptionChanged"
-          :disabled="!selectedCourse"
-        />
-        Chercher dans un sous-groupe GitLab pour chaque groupe d'étudiants
-      </label>
-      <p v-if="!withStudentSubgroups">
-        Les dépôts seront lus directement dans
-        <strong v-if="gitlabGroup">{{ gitlabGroup.full_path }}</strong>
-        <span v-else>le groupe GitLab sélectionné</span>.
-      </p>
-      <template v-else>
-        <p>
-          Les étudiants seront automatiquement recherché dans leur sous-groupe à partir des
-          informations du PAE.
-        </p>
-        <ul>
-          <li>gitlabgroup : {{ gitlabGroup }}</li>
-          <li>requiredStudentGroups : {{ requiredStudentGroups }}</li>
-          <li>studentsWithoutGroup : {{ studentsWithoutGroup }}</li>
-        </ul>
-      </template>
-    </section> -->
     <section>
       <h2>4. Nom des dépôts</h2>
       <RepositoryPatternInput v-model="repositoryPattern" @validity-changed="patternChanged" />
     </section>
+    <button :disabled="!canLoad" @click="loadProjectsWithCommits">Charger les projets</button>
   </BaseLayout>
 </template>
